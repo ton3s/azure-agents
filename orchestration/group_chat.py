@@ -4,6 +4,7 @@
 import asyncio
 import os
 from dotenv import load_dotenv
+from semantic_kernel import Kernel
 from semantic_kernel.agents import Agent, ChatCompletionAgent
 from semantic_kernel.agents import GroupChatOrchestration, RoundRobinGroupChatManager
 from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
@@ -13,13 +14,16 @@ from semantic_kernel.agents.runtime import InProcessRuntime
 # Load environment variables
 load_dotenv()
 
-service = AzureChatCompletion(
+azure_chat_completion = AzureChatCompletion(
 	deployment_name=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
 	endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
 	api_key=os.getenv("AZURE_OPENAI_API_KEY"),
 	api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
 	service_id="azure_gpt4"
 )
+
+kernel = Kernel()
+kernel.add_service(azure_chat_completion)
 
 def get_agents() -> list[Agent]:
     writer = ChatCompletionAgent(
@@ -28,7 +32,7 @@ def get_agents() -> list[Agent]:
         instructions=(
             "You are an excellent content writer. You create new content and edit contents based on the feedback."
         ),
-        service=service,
+        kernel=kernel,
     )
     reviewer = ChatCompletionAgent(
         name="Reviewer",
@@ -36,7 +40,7 @@ def get_agents() -> list[Agent]:
         instructions=(
             "You are an excellent content reviewer. You review the content and provide feedback to the writer."
         ),
-        service=service,
+        kernel=kernel,
     )
     return [writer, reviewer]
 
